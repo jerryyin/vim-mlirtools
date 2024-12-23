@@ -76,7 +76,6 @@ function! cmake#RunCommand(stage, ...) abort
   elseif a:stage ==# 'test'
     let l:efm = cmake#GetCTestErrorFormat()
     let l:cmd = 'ctest --test-dir '. shellescape(l:build_dir) . ' ' . join(l:args)
-    echom(l:cmd)
   else
     echomsg 'Unknown stage: ' . a:stage
     return
@@ -93,5 +92,5 @@ function! cmake#RunCommand(stage, ...) abort
     execute '!' . l:cmd
   endif
 
-	call cmake#RestoreErrorFormat()
+  call cmake#RestoreErrorFormat()
 endfunction
