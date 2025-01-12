@@ -10,3 +10,4 @@ command! -nargs=* CMakeConfigure call mlirtools#RunCommand('configure', <f-args>
 command! -nargs=* CMakeBuild call mlirtools#RunCommand('build', <f-args>)
 command! -nargs=* CMakeTest call mlirtools#RunCommand('test', <f-args>)
 
+command! -nargs=0 AGetMLIRTestCommand call mlirtools#GetMLIRTestCommand()
