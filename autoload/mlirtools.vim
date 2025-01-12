@@ -94,3 +94,55 @@ function! mlirtools#RunCommand(stage, ...) abort
 
   call mlirtools#RestoreErrorFormat()
 endfunction
+
+function! mlirtools#GetMLIRTestCommand()
+  " Initialize variables
+  let l:commands = []
+  let l:current_cmd = ""
+  let l:run_found = 0
+
+  " Iterate through all lines in the buffer
+  for l:line in getline(1, '$')
+    " Check if the line starts with '// RUN:'
+    if l:line =~ '^// RUN:'
+      " Mark that we found a RUN line
+      let l:run_found = 1
+
+      " Remove the '// RUN: ' prefix
+      let l:line = substitute(l:line, '^// RUN: ', '', '')
+
+      " Check if the line ends with a backslash
+      if l:line =~ '\\$'
+        " Remove the backslash and add to the current command
+        let l:current_cmd .= substitute(l:line, '\\$', '', '') . " "
+      else
+        " Add the complete line to the current command and finalize it
+        let l:current_cmd .= l:line
+        call add(l:commands, l:current_cmd)
+        let l:current_cmd = ""
+      endif
+    elseif l:run_found
+      " Break the loop if we've already found RUN lines and encounter a non-RUN line
+      break
+    endif
+  endfor
+
+  " Handle the case where the last line is incomplete
+  if l:current_cmd != ""
+    call add(l:commands, l:current_cmd)
+  endif
+
+  " Process each command
+  let l:full_path = expand('%:p')
+  for i in range(len(l:commands))
+    " Remove FileCheck from command
+    let l:commands[i] = substitute(l:commands[i], '|\s*FileCheck.*$', '', '')
+    " Substitute %s with the full path of the current file
+    let l:commands[i] = substitute(l:commands[i], '%s', l:full_path, 'g')
+    " Trim leading or trailing whitespace
+    let l:commands[i] = substitute(l:commands[i], '^\s*\(.\{-}\)\s*$', '\1', '')
+  endfor
+
+  " Join all commands into a single string, separated by semicolons
+  return join(l:commands, " ; ")
+endfunction
