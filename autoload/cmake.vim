@@ -1,14 +1,14 @@
-function! cmake#SetErrorFormat(efm) abort
+function! mlirtools#SetErrorFormat(efm) abort
   let &l:errorformat = a:efm
 endfunction
 
-function! cmake#RestoreErrorFormat() abort
+function! mlirtools#RestoreErrorFormat() abort
   "let &l:errorformat = g:cmake_original_efm
   let &errorformat = g:cmake_old_errorformat
   let &makeprg = g:cmake_old_makeprg
 endfunction
 
-function! cmake#GetConfigureErrorFormat() abort
+function! mlirtools#GetConfigureErrorFormat() abort
   return ' %#%f:%l %#(%m),'
     \ .'See also "%f".,'
     \ .'%E%>CMake Error at %f:%l:,'
@@ -30,17 +30,17 @@ function! cmake#GetConfigureErrorFormat() abort
     \ .'%Z  %m,'
 endfunction
 
-function! cmake#GetBuildErrorFormat() abort
+function! mlirtools#GetBuildErrorFormat() abort
   return '%f:%l:%c: %trror: %m,'
     \ .'%.%#[1m%f:%l:%c: %.%#m%trror: %m,'
 endfunction
 
-function! cmake#GetCTestErrorFormat() abort
+function! mlirtools#GetCTestErrorFormat() abort
   return '%.%#at %f:%l offset :%.%#:%.%#: %trror: %m,'
     \ .'%f:%l:%c: %trror: %m,'
 endfunction
 
-function! cmake#GetBuildDir() abort
+function! mlirtools#GetBuildDir() abort
   " Define a pattern to locate the root directory
   let l:root_pattern = '.git'
 
@@ -62,19 +62,19 @@ function! cmake#GetBuildDir() abort
   return l:build_dir
 endfunction
 
-function! cmake#RunCommand(stage, ...) abort
+function! mlirtools#RunCommand(stage, ...) abort
   let l:args = a:000
-  let l:build_dir = cmake#GetBuildDir()
+  let l:build_dir = mlirtools#GetBuildDir()
 
   " Determine the error format based on the stage
   if a:stage ==# 'configure'
-    let l:efm = cmake#GetConfigureErrorFormat()
+    let l:efm = mlirtools#GetConfigureErrorFormat()
     let l:cmd = 'cmake ' . join(l:args)
   elseif a:stage ==# 'build'
-    let l:efm = cmake#GetBuildErrorFormat()
+    let l:efm = mlirtools#GetBuildErrorFormat()
     let l:cmd = 'cmake --build ' . shellescape(l:build_dir) . ' ' . join(l:args)
   elseif a:stage ==# 'test'
-    let l:efm = cmake#GetCTestErrorFormat()
+    let l:efm = mlirtools#GetCTestErrorFormat()
     let l:cmd = 'ctest --test-dir '. shellescape(l:build_dir) . ' ' . join(l:args)
   else
     echomsg 'Unknown stage: ' . a:stage
@@ -82,7 +82,7 @@ function! cmake#RunCommand(stage, ...) abort
   endif
 
   " Set the error format and make program
-  call cmake#SetErrorFormat(l:efm)
+  call mlirtools#SetErrorFormat(l:efm)
   let &makeprg = l:cmd
 
   " Use :Make to run the command
@@ -92,5 +92,5 @@ function! cmake#RunCommand(stage, ...) abort
     execute '!' . l:cmd
   endif
 
-  call cmake#RestoreErrorFormat()
+  call mlirtools#RestoreErrorFormat()
 endfunction
