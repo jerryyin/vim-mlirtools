@@ -87,6 +87,7 @@ function! mlirtools#GetBuildDir() abort
 
     " If there are subdirectories, pick the first one as the build directory
     if !empty(l:sub_dirs)
+      let g:cmake_build_dir = l:sub_dirs[0]
       return l:sub_dirs[0]
     endif
   endif
@@ -94,6 +95,20 @@ function! mlirtools#GetBuildDir() abort
   " Fallback to the default directory
   let l:default_build_dir = l:build_base . '/default'
   return l:default_build_dir
+endfunction
+
+function! mlirtools#SetupClangdSymlink() abort
+  let l:build_dir = mlirtools#GetBuildDir()
+  let l:compile_commands = l:build_dir . '/compile_commands.json'
+  let l:symlink_target = fnamemodify(l:compile_commands, ':p:h') . '/../'
+
+  if filereadable(l:symlink_target)
+    return
+  endif
+
+  if filereadable(l:compile_commands)
+    silent! call system('ln -sf ' . l:compile_commands . ' ' . l:symlink_target)
+  endif
 endfunction
 
 function! mlirtools#RunCommand(stage, ...) abort
@@ -124,6 +139,11 @@ function! mlirtools#RunCommand(stage, ...) abort
     silent! execute 'Make'
   else
     execute '!' . l:cmd
+  endif
+
+  " Set up the clangd symlink if configuring is done
+  if a:stage ==# 'configure'
+    call mlirtools#SetupClangdSymlink()
   endif
 
   call mlirtools#RestoreErrorFormat()
