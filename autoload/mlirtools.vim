@@ -58,24 +58,24 @@ function! mlirtools#GetBuildDir() abort
   endif
 
   " Check for the 'build' directory in the root directory
-  let l:build_dir = l:current_dir . '/build/'
+  let l:build_dir = l:current_dir . '/build'
   return l:build_dir
 endfunction
 
-function! mlirtools#RunCommand(stage, build_dir, args) abort
-  let l:args = a:args 
-  let l:build_dir = mlirtools#GetBuildDir() . a:build_dir
+function! mlirtools#RunCommand(stage, ...) abort
+  let l:args = a:000
+  let l:build_dir = mlirtools#GetBuildDir()
 
   " Determine the error format based on the stage
   if a:stage ==# 'configure'
     let l:efm = mlirtools#GetConfigureErrorFormat()
-    let l:cmd = 'cmake ' . ' ' . l:args
+    let l:cmd = 'cmake ' . join(l:args)
   elseif a:stage ==# 'build'
     let l:efm = mlirtools#GetBuildErrorFormat()
-    let l:cmd = 'cmake --build ' . shellescape(l:build_dir) . ' ' . l:args
+    let l:cmd = 'cmake --build ' . shellescape(l:build_dir) . ' ' . join(l:args)
   elseif a:stage ==# 'test'
     let l:efm = mlirtools#GetCTestErrorFormat()
-    let l:cmd = 'ctest --test-dir '. shellescape(l:build_dir) . ' ' . l:args
+    let l:cmd = 'ctest --test-dir '. shellescape(l:build_dir) . ' ' . join(l:args)
   else
     echomsg 'Unknown stage: ' . a:stage
     return
