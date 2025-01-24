@@ -40,7 +40,17 @@ function! mlirtools#GetCTestErrorFormat() abort
     \ .'%f:%l:%c: %trror: %m,'
 endfunction
 
-function! mlirtools#GetBuildDir() abort
+" Function to set the build directory
+function! mlirtools#SetBuildDir(build_dir) abort
+  if !isdirectory(a:build_dir)
+    echomsg 'The specified build directory does not exist: ' . a:build_dir
+    return
+  endif
+  let g:cmake_build_dir = a:build_dir
+  echomsg 'Build directory set to: ' . g:cmake_build_dir
+endfunction
+
+function! mlirtools#GetRootDir() abort
   " Define a pattern to locate the root directory
   let l:root_pattern = '.git'
 
@@ -57,9 +67,33 @@ function! mlirtools#GetBuildDir() abort
     return '.'
   endif
 
-  " Check for the 'build' directory in the root directory
-  let l:build_dir = l:current_dir . '/build'
-  return l:build_dir
+  return l:current_dir
+endfunction
+
+" Function to get the build directory
+function! mlirtools#GetBuildDir() abort
+  " Use the globally set build directory if available
+  if g:cmake_build_dir !=# ''
+    return g:cmake_build_dir
+  endif
+
+  let l:root_dir = mlirtools#GetRootDir()
+  let l:build_base = l:root_dir . '/build'
+
+  " Check if the base build directory exists
+  if isdirectory(l:build_base)
+    " Find all subdirectories in the build directory
+    let l:sub_dirs = globpath(l:build_base, '*/', 0, 1)
+
+    " If there are subdirectories, pick the first one as the build directory
+    if !empty(l:sub_dirs)
+      return l:sub_dirs[0]
+    endif
+  endif
+
+  " Fallback to the default directory
+  let l:default_build_dir = l:build_base . '/default'
+  return l:default_build_dir
 endfunction
 
 function! mlirtools#RunCommand(stage, ...) abort
