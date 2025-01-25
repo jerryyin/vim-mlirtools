@@ -100,7 +100,7 @@ endfunction
 function! mlirtools#SetupClangdSymlink() abort
   let l:build_dir = mlirtools#GetBuildDir()
   let l:compile_commands = l:build_dir . '/compile_commands.json'
-  let l:symlink_target = fnamemodify(l:compile_commands, ':p:h') . '/../'
+  let l:symlink_target = fnamemodify(l:compile_commands, ':p:h') . '/../compile_commands.json'
 
   if filereadable(l:symlink_target)
     return
@@ -200,3 +200,39 @@ function! mlirtools#GetMLIRTestCommand()
   " Join all commands into a single string, separated by semicolons
   return join(l:commands, " ; ")
 endfunction
+
+function! mlirtools#RunToScratch(cmd)
+  " Capture the result of the given command
+  let l:result = system(a:cmd)
+
+  " Open a new vertical split for the scratch buffer
+  vertical new
+  setlocal buftype=nofile bufhidden=wipe noswapfile
+
+  " Split the result into lines and insert them into the scratch buffer
+  let l:lines = split(l:result, '\n')
+  call append(0, l:lines)
+endfunction
+
+let s:plugin_root_dir = expand('<sfile>:p:h:h')
+function! mlirtools#GenerateTestChecks(cmd_type)
+  let l:plugin_dir = s:plugin_root_dir
+  let l:script_path = l:plugin_dir . '/python/generate_test_checks.py'
+  let l:buffer_content = join(getline(1, '$'), "\n")
+
+  if a:cmd_type == 'buffer'
+    let l:cmd = 'echo '.shellescape(l:buffer_content).' | python '.shellescape(l:script_path).' -'
+  elseif a:cmd_type == 'file'
+    let l:buffer_path = expand('%:p')
+    let l:cmd = GetMLIRTestCommand(). ' | python '.shellescape(l:script_path).' --source '.shellescape(l:buffer_path)
+    "let l:cmd = '('. GetMLIRTestCommand(). ') | python -O '.shellescape(l:script_path).' --source '.shellescape(l:buffer_path)
+  else
+    echohl ErrorMsg
+    echo "Invalid command type. Use 'buffer' or 'file'."
+    echohl None
+    return
+  endif
+
+  call RunToScratch(l:cmd)
+endfunction
+
