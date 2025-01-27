@@ -93,22 +93,19 @@ function! mlirtools#GetBuildDir() abort
   endif
 
   " Fallback to the default directory
-  let l:default_build_dir = l:build_base . '/default'
+  " TODO: think of a way to handle configure step when folder doesn't exists yet
+  let l:default_build_dir = l:build_base . '/dbg'
   return l:default_build_dir
 endfunction
 
 function! mlirtools#SetupClangdSymlink() abort
   let l:build_dir = mlirtools#GetBuildDir()
   let l:compile_commands = l:build_dir . '/compile_commands.json'
-  let l:symlink_target = fnamemodify(l:compile_commands, ':p:h') . '/../compile_commands.json'
+  let l:symlink_target = fnamemodify(l:compile_commands, ':p:h:h') . '/compile_commands.json'
+  echom l:compile_commands . ' -> ' . l:symlink_target
 
-  if filereadable(l:symlink_target)
-    return
-  endif
-
-  if filereadable(l:compile_commands)
-    silent! call system('ln -sf ' . l:compile_commands . ' ' . l:symlink_target)
-  endif
+  " Note: target may not exist when executing since it is async command
+  silent! call system('ln -sf ' . l:compile_commands . ' ' . l:symlink_target)
 endfunction
 
 function! mlirtools#RunCommand(stage, ...) abort
