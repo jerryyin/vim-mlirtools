@@ -217,17 +217,42 @@ function! mlirtools#GetMLIRTestCommand()
   return join(l:commands, " ; ")
 endfunction
 
-function! mlirtools#RunToScratch(cmd)
-  " Capture the result of the given command
-  let l:result = system(a:cmd)
-
+function! mlirtools#RunToScratch(cmd) abort
   " Open a new vertical split for the scratch buffer
   vertical new
   setlocal buftype=nofile bufhidden=wipe noswapfile
+  let l:bufnr = bufnr('%')
 
-  " Split the result into lines and insert them into the scratch buffer
-  let l:lines = split(l:result, '\n')
-  call append(0, l:lines)
+  " stdout callback
+  function! s:OnStdout(chan, msg) dict
+    if bufexists(self.bufnr) && a:msg !=# ''
+      let l:lines = split(a:msg, '\n')
+      " Append at the end of buffer
+      call appendbufline(self.bufnr, '$', l:lines)
+    endif
+  endfunction
+
+  " stderr callback
+  function! s:OnStderr(chan, msg) dict
+    if bufexists(self.bufnr) && a:msg !=# ''
+      let l:lines = split(a:msg, '\n')
+      call appendbufline(self.bufnr, '$', l:lines)
+    endif
+  endfunction
+
+  " close callback
+  function! s:OnClose(chan) dict
+    if bufexists(self.bufnr)
+      call appendbufline(self.bufnr, '$', ['--- job finished ---'])
+    endif
+  endfunction
+
+  " Start async job
+  call job_start(a:cmd, {
+        \ 'out_cb':   function('s:OnStdout', {'bufnr': l:bufnr}),
+        \ 'err_cb':   function('s:OnStderr', {'bufnr': l:bufnr}),
+        \ 'close_cb': function('s:OnClose',  {'bufnr': l:bufnr}),
+        \ })
 endfunction
 
 let s:plugin_root_dir = expand('<sfile>:p:h:h')
