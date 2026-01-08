@@ -247,8 +247,8 @@ function! mlirtools#RunToScratch(cmd) abort
     endif
   endfunction
 
-  " Start async job
-  call job_start(a:cmd, {
+  " Start async job - wrap in shell to handle &&, ;, pipes, etc.
+  call job_start(['/bin/sh', '-c', a:cmd], {
         \ 'out_cb':   function('s:OnStdout', {'bufnr': l:bufnr}),
         \ 'err_cb':   function('s:OnStderr', {'bufnr': l:bufnr}),
         \ 'close_cb': function('s:OnClose',  {'bufnr': l:bufnr}),
